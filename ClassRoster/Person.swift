@@ -6,11 +6,12 @@
 //  Copyright (c) 2015 Jonathan W Young. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
-class Person {
-    let firstName = "John";
-    let lastName = "Doe";
+class Person : NSObject, NSCoding {
+    var firstName = "John";
+    var lastName = "Doe";
+    var image : UIImage?
     
     init(fName : String, lName : String){
         self.firstName = fName;
@@ -20,4 +21,21 @@ class Person {
     func fullName() ->String{
         return self.firstName + " " + self.lastName
     }
+    
+    required init(coder aDecoder: NSCoder){
+        self.firstName = aDecoder.decodeObjectForKey("firstName") as String
+        self.lastName = aDecoder.decodeObjectForKey("lastName") as String
+        self.image = aDecoder.decodeObjectForKey("image") as? UIImage
+    }
+    
+    func encodeWithCoder(aDecoder: NSCoder){
+        aDecoder.encodeObject(self.firstName, forKey: "firstName")
+        aDecoder.encodeObject(self.lastName, forKey: "lastName")
+        if(self.image != nil){
+            aDecoder.encodeObject(self.image, forKey: "image")
+        }
+        
+    }
+    
+    
 }

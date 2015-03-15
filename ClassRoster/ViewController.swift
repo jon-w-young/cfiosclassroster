@@ -19,21 +19,49 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let userDefaults = NSUserDefaults.standardUserDefaults()
+        if let count = userDefaults.objectForKey("launchCount") as? Int {
+            userDefaults.setObject((count + 1), forKey: "launchCount")
+            self.loadFromArchive()
+        }
+        else{
+            userDefaults.setObject(1, forKey: "launchCount")
+        }
+        
+        
         self.title = "Home"
         self.tableView.dataSource = self
         self.tableView.delegate = self
         // Do any additional setup after loading the view, typically from a nib.
         
         
-        people.append(Person(fName: "Al", lName: "Albertson"))
-        people.append(Person(fName: "Ben", lName: "Benson"))
-        people.append(Person(fName: "Charles", lName: "Charleston"))
-        people.append(Person(fName: "Donald", lName: "Donaldson"))
-        people.append(Person(fName: "Eric", lName: "Ericson"))
-        people.append(Person(fName: "Frank", lName: "Frankenstein"))
-
+        if self.people.isEmpty{
+            if let filePath = NSBundle.mainBundle().pathForResource("people", ofType: "plist"){
+                if let plistArray = NSArray(contentsOfFile: filePath){
+                    println(plistArray.count)
+                    
+                    for peopleObject in plistArray{
+                        if let personDict = peopleObject as? NSDictionary{
+                            let firstName = personDict["FirstName"] as String
+                            let lastName = personDict["LastName"] as String
+                            let addMe = Person(fName: firstName, lName: lastName)
+                            people.append(addMe)
+                        }
+                    }
+                    
+                    
+                }
+                
+            }
+            self.saveToArchive()
+        }
         
          println("viewDidLoad")
+
+        self.saveToArchive()
+        
+        
     }
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
@@ -51,6 +79,8 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
+        self.saveToArchive()
+        tableView.reloadData()
         println("viewWillAppear")
     }
     override func didReceiveMemoryWarning() {
@@ -73,9 +103,13 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     
     func tableView(tableView: UITableView,
         cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell{
-            let cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath) as UITableViewCell
+            let cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath) as PersonCell
             //cell.backgroundColor = UIColor.blueColor()
-            cell.textLabel?.text = people[indexPath.row].fullName()
+            cell.personLabel.text = people[indexPath.row].fullName()
+            if people[indexPath.row].image != nil {
+                cell.personImage?.image = people[indexPath.row].image
+            }
+            //cell.textLabel?.text = people[indexPath.row].fullName()
             return cell
     }
     
@@ -85,7 +119,26 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
             
     }
 
+    func saveToArchive(){
+        let archivePath = self.getDocumentsPath()
+        NSKeyedArchiver.archiveRootObject(self.people, toFile: archivePath + "archive")
+        
+        
+    }
     
+    func loadFromArchive(){
+        let archivePath = self.getDocumentsPath()
+        let arrayFromArchive = NSKeyedUnarchiver.unarchiveObjectWithFile(archivePath + "archive") as [Person]
+        self.people = arrayFromArchive
+        
+    }
+    
+    func getDocumentsPath() -> String{
+        let documentsPaths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
+        
+        
+        return documentsPaths.first as String
+    }
 
 }
 
